@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name BeagleBone_Design)(type KiCad)(uri "$(KIPRJMOD)/BeagleBone_Design.pretty")(options "")(descr ""))
+)
