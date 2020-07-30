@@ -54,6 +54,7 @@ pcb-module beagle-board :
   inst HDMI_ESD_TMDS2 : {ocdb/texas-instruments/TPD4E02B04DQAR/module}
   inst HDMI_ESD_PWR :   {ocdb/texas-instruments/TPD4E05U06QDQARQ1/module}
   inst HDMI_TRANS :     {ocdb/nxp/TDA19988BHN-C1-557/module}
+  inst FB5 :            {ocdb/laird/LI0805H151R-10/component}                                 ;HDMI power ferrite
   inst D6 :             {ocdb/nexperia/RB751V40_115/component}
   inst FF :             {ocdb/texas-instruments/SN74AUC1G74DCT/module}                        
   inst Y4 :             {ocdb/abracon/ASDMB-24-576MHZ-LC-T/module}                            ;connect with HDMI I2S (mcasp0 mclk)
@@ -100,6 +101,7 @@ pcb-module beagle-board :
   schematic-group(Y4) = hdmi
   schematic-group(D6) = hdmi
   schematic-group(F1) = hdmi
+  schematic-group(FB5) = hdmi
   schematic-group(Q1) = led
   schematic-group(Q2) = led
   schematic-group(Q3) = led
@@ -108,7 +110,7 @@ pcb-module beagle-board :
   schematic-group(D3) = led
   schematic-group(D4) = led
   schematic-group(D5) = led
-  schematic-group(ETH_CONN) = ethernet
+  schematic-group(ETH_CONN) = ethernet_conn
   schematic-group(ETH_TRANS) = ethernet
   schematic-group(Y3) = ethernet
   schematic-group(FB4) = ethernet
@@ -132,7 +134,7 @@ pcb-module beagle-board :
 
   ;DNGD to Earth GND Connection
   val earth_r = res-strap(ETH_CONN.SHIELD, DGND, 1.0)              ;Design Note: resistor should be 0805
-  schematic-group({earth_r}) = ethernet
+  schematic-group({earth_r}) = ethernet_conn
   
   ;MOUNTING HOLES 
 
@@ -298,9 +300,9 @@ pcb-module beagle-board :
   net (DGND USD_CONN.GND USD_CONN.SWB)
 
   net (VDD_3V3B USD_CONN.VDD)
-  val c_sdcap1 = cap-strap(VDD_3V3B, USD_CONN.VDD, 10.0e-6)
+  val c_sdcap1 = cap-strap(VDD_3V3B, DGND, 10.0e-6)
   schematic-group({c_sdcap1}) = micro_sd
-  val c_sdcap2 = cap-strap(VDD_3V3B, USD_CONN.VDD, 0.1e-6)
+  val c_sdcap2 = cap-strap(VDD_3V3B, DGND, 0.1e-6)
   schematic-group({c_sdcap2}) = micro_sd
 
   ;card detect - hi = inserted
@@ -488,8 +490,13 @@ pcb-module beagle-board :
        HDMI_ESD_TMDS2.GND HDMI_ESD_PWR.GND)
   
   ;connector power
-  net DVI_+5V (HDMI_CONN.VCC_5V F1.p[1])
+  net DVI_+5V (HDMI_CONN.VCC_5V F1.p[1])                           ;Power Net = ?mA typical
   net (SYS_5V  F1.p[2])
+
+  ;transceiver power
+  net (VDD_1V8 FB5.p[1])                                           
+  net HDMI_1V8 (FB5.p[2])                                          ;Power Net = ?mA typical
+  net (HDMI_1V8 HDMI_TRANS.VDD_PLL HDMI_TRANS.VDDA HDMI_TRANS.VDDC HDMI_TRANS.VDDIO)
 
   ;transceiver-connector data lines + esd
   ;Impedance Controlled Nets: Diff Impedance = 100ohm, SE = 50ohm
@@ -598,19 +605,22 @@ pcb-module beagle-board :
   net PHY_XTAL2 (ETH_TRANS.XTAL2)
   net PHY_XTAL1 (Y3.XTAL1)
   net PHYX (Y3.XTAL2)
+  net (DGND Y3.OSC_GND)
   val eth_phy_r = res-strap(PHYX, PHY_XTAL2, 10.0) ;1% tolerance required
   schematic-group({eth_phy_r}) = ethernet
   val eth_xtal_r = res-strap(PHY_XTAL1, PHY_XTAL2, 1000000.0) 
   properties({eth_xtal_r}) :
     DNP => true
   schematic-group({eth_xtal_r}) = ethernet
+  val eth_rk_r = res-strap(PHY_XTAL1, RCLKIN, 0.0) 
+  schematic-group({eth_rk_r}) = ethernet
 
   ;transceiver reset
   net (SYS_RESETn ETH_TRANS.nRST)
 
   ;transceiver power
   net (VDD_3V3B ETH_TRANS.VDDIO FB4.p[1])                 ;Power Net = ?mA typical
-  net VDD_PHYA (FB1.p[2] ETH_TRANS.VDD_PHYA)              ;Power Net = ?mA typical
+  net VDD_PHYA (FB4.p[2] ETH_TRANS.VDD_PHYA)              ;Power Net = ?mA typical
   
   ;transceiver-connector data lines
   net TXP (ETH_TRANS.TXP, ETH_CONN.TD_P)                   ;Impedance Controlled Net = RX/TX diff pairs - keep trace < 25mm, 50ohm SE 100ohm DF
@@ -667,10 +677,12 @@ pcb-module beagle-board :
   ;connector power
   net TCT_RCT (ETH_CONN.TCT_RCT)                      ;Power Net = ?mA typical
   val eth_tct_r = res-strap(TCT_RCT, VDD_PHYA, 0.0)   ;Power Net = ?mA typical
-  schematic-group({eth_tct_r}) = ethernet
+  schematic-group({eth_tct_r}) = ethernet_conn
 
   ;transceiver-cpu data lines
   net MDIO_DATA (CPU.cpu.io[85] ETH_TRANS.MDIO)
+  val eth_mdio_r = res-strap(VDD_3V3B, ETH_TRANS.MDIO, 1500.0)
+  schematic-group({eth_mdio_r}) = ethernet
   net MDIO_CLK (CPU.cpu.io[84] ETH_TRANS.MDC)
 
   net MII1_RXD3 (CPU.cpu.io[80])
@@ -711,8 +723,8 @@ pcb-module beagle-board :
 
   net U5_H18 (CPU.cpu.io[83])
   net MII1_REFCLK ()
-  val eth_refclk_r = res-strap(U5_H18, MII1_REFCLK, 33.0)
-  schematic-group({eth_refclk_r}) = ethernet
+  val eth_refclk_r = res-strap(U5_H18, MII1_REFCLK, 33.0)                 ;place close to processor 
+  schematic-group({eth_refclk_r}) = proc
   val eth_m1refclk0_r = res-strap(MII1_REFCLK, REFCLK0, 0.0)
   properties({eth_m1refclk0_r}) :
     DNP => true
@@ -757,7 +769,7 @@ pcb-module beagle-board :
   schematic-group({jtag_trstn_r}) = header
   net (DGND JTAG_HEADER.TDIS JTAG_HEADER.GND)
   net JTAG_EMU1 (CPU.cpu.io[3] JTAG_HEADER.EMU1)
-  val jtag_emu1_r = res-strap(VDD_3V3B, JTAG_EMU0, 4.75e3)
+  val jtag_emu1_r = res-strap(VDD_3V3B, JTAG_EMU1, 4.75e3)
   schematic-group({jtag_emu1_r}) = header
   net CLKOUT2 (JTAG_HEADER.EMU3)
   

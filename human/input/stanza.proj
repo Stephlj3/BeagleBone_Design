@@ -1,4 +1,4 @@
-include "../../../open-components-database/stanza.proj"
+;include "../../../open-components-database/stanza.proj"
 
 ; include "../../../your-private-library/stanza.proj"
 include "/Users/stephaniejohnson/Documents/Consulting/JITX/open-components-database/stanza.proj"
