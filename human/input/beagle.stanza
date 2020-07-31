@@ -1,3 +1,8 @@
+;DESIGN SUMMARY
+;This design is based on the Beaglebone Black - https://github.com/beagleboard/BeagleBone-Black
+;Components have been updated if obsolete
+;Test Points, Mounting Holes, and Fiducials not included
+
 #use-added-syntax(esir)
 defpackage Beagle :
   import core
@@ -135,8 +140,6 @@ pcb-module beagle-board :
   ;DNGD to Earth GND Connection
   val earth_r = res-strap(ETH_CONN.SHIELD, DGND, 1.0)              ;Design Note: resistor should be 0805
   schematic-group({earth_r}) = ethernet_conn
-  
-  ;MOUNTING HOLES 
 
   ;=========================================================================
   ; PMIC & POWER 
@@ -213,8 +216,8 @@ pcb-module beagle-board :
   schematic-group({i2c0_sda_r}) = proc
 
   ;I2C1
-  net I2C1_SCL (CPU.cpu.io[52])
-  net I2C1_SDA (CPU.cpu.io[53])
+  net I2C1_SCL (CPU.cpu.io[53])
+  net I2C1_SDA (CPU.cpu.io[52])
   val i2c1_scl_r = res-strap(I2C1_SCL, VDD_3V3A, 1.5e3)
   properties({i2c1_scl_r}) :
     DNP => true
@@ -225,8 +228,8 @@ pcb-module beagle-board :
   schematic-group({i2c1_sda_r}) = proc
 
   ;I2C2
-  net I2C2_SCL (CPU.cpu.io[61])
-  net I2C2_SDA (CPU.cpu.io[62])
+  net I2C2_SCL (CPU.cpu.io[62])
+  net I2C2_SDA (CPU.cpu.io[61])
   val i2c2_scl_r = res-strap(I2C2_SCL, VDD_3V3A, 1.5e3)
   properties({i2c2_scl_r}) :
     DNP => true
@@ -260,7 +263,7 @@ pcb-module beagle-board :
   ;=========================================================================
   ;Mini-USB Client Connector & ESD Protection
   net USB_DC (USB_CONN_MINI.VDD USB_ESD_MINI.VBUS PMIC.USB_5V)     ;Power Net = 500mA typical
-  val usb_dc_c = cap-strap(USB_DC, DGND, 0.1e-6)                   ;note: place close to TPD4S012_MINI in layout
+  val usb_dc_c = cap-strap(USB_DC, DGND, 0.1e-6)                   ;note: place close to TPD4S012 in layout
   schematic-group({usb_dc_c}) = usb
   val usb_dc_r = res-strap(USB_DC, CPU.USB0_VBUS, 0.0)             ;VBUS detect, AM3358 5V tolerant
   schematic-group({usb_dc_r}) = usb
@@ -915,5 +918,5 @@ export-kicad("../../bot/kicad/BeagleBone_Design", [`place => true
                                                   `gen-board => true 
                                                   `gen-schematic => true 
                                                   `fresh => true
-                                                  `schematic-version => 3 
+                                                  `schematic-version => 1 
                                                   `param-configs => [`sketch]] )
